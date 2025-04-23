@@ -3,6 +3,7 @@ from concurrent import futures
 import time
 import logging
 import io
+import os
 from PIL import Image
 import torch
 from ultralytics import YOLO
@@ -13,11 +14,11 @@ import yolo_serving_pb2_grpc
 
 # --- Configuration ---
 SERVER_CONFIG = {
-    "address": "[::]:50051",
-    "max_workers": 10,
-    "model_path": "yolo11l.pt",
-    "default_conf_threshold": 0.1,
-    "input_img_size": 640,
+    "address": f"[::]:{os.environ.get('SERVER_PORT', '50051')}",
+    "max_workers": int(os.environ.get('MAX_WORKERS', '10')),
+    "model_path": os.environ.get('MODEL_PATH', 'models/yolo11l.pt'),
+    "default_conf_threshold": float(os.environ.get('DEFAULT_CONF_THRESHOLD', '0.1')),
+    "input_img_size": int(os.environ.get('INPUT_IMG_SIZE', '640'))
 }
 
 
