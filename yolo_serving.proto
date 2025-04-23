@@ -1,0 +1,53 @@
+syntax = "proto3"; 
+
+package yolo_serving; 
+
+
+// gRPC service
+service YoloService {
+  
+  rpc Predict(YoloRequest) returns (YoloResponse);
+  
+  rpc CheckHealth(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+
+
+// Single bounding box structure
+message BoundingBox {
+  float y_min = 1;
+  float x_min = 2;
+  float y_max = 3;
+  float x_max = 4;
+  float confidence = 5;
+  int32 class_id = 6;
+  string class_name = 7; 
+}
+
+message YoloRequest {
+  bytes image_data = 1; // Raw image bytes (e.g., JPEG, PNG)
+  // Optional parameters client can override
+  float confidence_threshold = 2; // Minimum confidence to return a box
+  float iou_threshold = 3;        // IoU threshold for Non-Max Suppression (NMS)
+}
+
+// Response message containing the list of detected bounding boxes
+message YoloResponse {
+  repeated BoundingBox boxes = 1; 
+}
+
+
+// Standard health check messages
+message HealthCheckRequest {
+  string service = 1; // Empty string means overall health
+}
+
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+    SERVICE_UNKNOWN = 3; 
+  }
+  ServingStatus status = 1;
+}
