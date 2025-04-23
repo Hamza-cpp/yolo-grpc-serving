@@ -1,0 +1,41 @@
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY pyproject.toml .
+
+RUN pip install --no-cache-dir -e .
+
+COPY yolo_serving_server.py .
+COPY yolo_serving.proto .
+
+# Generate gRPC code from proto file
+RUN python -m grpc_tools.protoc -I. --python_out=. --pyi_out=. --grpc_python_out=. yolo_serving.proto
+
+RUN mkdir -p /app/models
+
+ENV MODEL_PATH=/app/models/yolo11l.pt
+ENV SERVER_PORT=50051
+ENV MAX_WORKERS=10
+
+EXPOSE 50051
+
+CMD ["python", "yolo_serving_server.py"]
+
+
+# docker network create yolo-net
+
+
+# docker build -t yolo-server -f Dockerfile.server .
+
+# docker run -d \
+#     --name yolo-server \
+#     --network yolo-net \
+#     -p 50051:50051 \
+#     -v $(pwd)/models:/app/models \
+#     yolo-server

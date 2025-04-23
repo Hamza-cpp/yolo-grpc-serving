@@ -1,0 +1,42 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.client.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY yolo_serving_client.py .
+COPY yolo_serving.proto .
+
+# Generate gRPC code from proto file
+RUN python -m grpc_tools.protoc -I. --python_out=. --pyi_out=. --grpc_python_out=. yolo_serving.proto
+
+ENV SERVER_ADDRESS=yolo-server:50051
+ENV CONFIDENCE_THRESHOLD=0.1
+
+RUN mkdir -p /app/images
+
+# Set default image path for testing
+ENV TEST_IMAGE=/app/images/test-image.jpeg
+
+ENTRYPOINT ["python", "yolo_serving_client.py"]
+
+
+
+# docker build -t yolo-client -f Dockerfile.client .
+
+# docker run --rm \
+#   --name yolo-client \
+#   --network yolo-net \
+#   -v $(pwd)/images:/app/images \
+#   yolo-client
+
+
+# docker run --rm \
+#   --name yolo-client \
+#   --network yolo-net \
+#   -v $(pwd)/images:/app/images \
+#   yolo-client \
+#   --check-health \
+#   --image ./images/CIN_maroc.jpg \
+#   --confidence 0.5
