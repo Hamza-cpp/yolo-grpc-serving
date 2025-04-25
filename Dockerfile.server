@@ -19,7 +19,7 @@ RUN python -m grpc_tools.protoc -I. --python_out=. --pyi_out=. --grpc_python_out
 
 RUN mkdir -p /app/models
 
-ENV MODEL_PATH=/app/models/best.pt
+# ENV MODEL_PATH=/app/models/best.pt
 ENV SERVER_PORT=50051
 ENV MAX_WORKERS=10
 
