@@ -16,7 +16,7 @@ import yolo_serving_pb2_grpc
 SERVER_CONFIG = {
     "address": f"[::]:{os.environ.get('SERVER_PORT', '50051')}",
     "max_workers": int(os.environ.get('MAX_WORKERS', '10')),
-    "model_path": os.environ.get('MODEL_PATH', 'models/yolo11l.pt'),
+    "model_path": os.environ.get('MODEL_PATH', 'models/best.pt'),
     "default_conf_threshold": float(os.environ.get('DEFAULT_CONF_THRESHOLD', '0.1')),
     "input_img_size": int(os.environ.get('INPUT_IMG_SIZE', '640'))
 }
