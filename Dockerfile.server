@@ -19,7 +19,7 @@ RUN python -m grpc_tools.protoc -I. --python_out=. --pyi_out=. --grpc_python_out
 
 RUN mkdir -p /app/models
 
-ENV MODEL_PATH=/app/models/yolo11l.pt
+ENV MODEL_PATH=/app/models/best.pt
 ENV SERVER_PORT=50051
 ENV MAX_WORKERS=10
 
@@ -38,4 +38,16 @@ CMD ["python", "yolo_serving_server.py"]
 #     --network yolo-net \
 #     -p 50051:50051 \
 #     -v $(pwd)/models:/app/models \
+#     -e MODEL_PATH=/app/models/best.pt \
+#     -e SERVER_PORT=50051 \
+#     -e MAX_WORKERS=10 \
+#     yolo-server
+
+# docker run -d \
+#     --name yolo-server \
+#     -p 50051:50051 \
+#     -v $(pwd)/models:/app/models \
+#     -e MODEL_PATH=/app/models/best.pt \
+#     -e SERVER_PORT=50051 \
+#     -e MAX_WORKERS=10 \
 #     yolo-server
