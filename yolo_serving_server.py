@@ -15,10 +15,11 @@ import yolo_serving_pb2_grpc
 # --- Configuration ---
 SERVER_CONFIG = {
     "address": f"[::]:{os.environ.get('SERVER_PORT', '50051')}",
-    "max_workers": int(os.environ.get('MAX_WORKERS', '10')),
-    "model_path": os.environ.get('MODEL_PATH', 'models/best.pt'),
-    "default_conf_threshold": float(os.environ.get('DEFAULT_CONF_THRESHOLD', '0.1')),
-    "input_img_size": int(os.environ.get('INPUT_IMG_SIZE', '640'))
+    "max_workers": int(os.environ.get("MAX_WORKERS", "10")),
+    "model_path": os.environ.get("MODEL_PATH", "models/best.pt"),
+    "default_conf_threshold": float(os.environ.get("DEFAULT_CONF_THRESHOLD", "0.1")),
+    "default_iou_threshold": float(os.environ.get("DEFAULT_IOU_THRESHOLD", "0.1")),
+    "input_img_size": int(os.environ.get("INPUT_IMG_SIZE", "640")),
 }
 
 
@@ -53,12 +54,26 @@ class YoloModel:
         except Exception as e:
             logging.warning(f"Model warm-up failed: {e}")
 
-    def predict(self, image, conf_threshold=None):
-        """Performs inference on the given image."""
+    def predict(self, image, conf_threshold=None, iou_threshold=None):
+        """Performs inference on the given image.
+
+        Args:
+            image: PIL Image or numpy array
+            conf_threshold: Confidence threshold (0-1)
+            iou_threshold: IoU threshold for NMS (0-1)
+
+        Returns:
+            Ultralytics detection results
+        """
+        kwargs = {"verbose": False}
+
         if conf_threshold is not None:
-            return self.model(image, verbose=False, conf=conf_threshold)
-        else:
-            return self.model(image, verbose=False)
+            kwargs["conf"] = conf_threshold
+
+        if iou_threshold is not None:
+            kwargs["iou"] = iou_threshold
+
+        return self.model(image, **kwargs)
 
     def is_ready(self):
         """Checks if the model is loaded and ready."""
@@ -140,6 +155,17 @@ class YoloServicer(yolo_serving_pb2_grpc.YoloServiceServicer):
                 else SERVER_CONFIG["default_conf_threshold"]
             )
 
+            # Get IoU threshold from request or use default
+            iou_threshold = (
+                request.iou_threshold
+                if request.iou_threshold > 0
+                else SERVER_CONFIG["default_iou_threshold"]
+            )
+
+            logging.info(
+                f"Using confidence threshold: {conf_threshold}, IoU threshold: {iou_threshold}"
+            )
+
             # Validate request
             if not request.image_data:
                 logging.warning(f"Request from {request_id} contained no image data.")
@@ -155,7 +181,9 @@ class YoloServicer(yolo_serving_pb2_grpc.YoloServiceServicer):
 
             # Run inference
             infer_start = time.time()
-            inference_results = self.model.predict(pil_image, conf_threshold)
+            inference_results = self.model.predict(
+                pil_image, conf_threshold=conf_threshold, iou_threshold=iou_threshold
+            )
             infer_time = time.time() - infer_start
             logging.info(f"Request {request_id}: Inference time: {infer_time:.4f}s")
 
